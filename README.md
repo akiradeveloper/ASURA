@@ -1,5 +1,8 @@
 # ASURA
 
+[![Crates.io](https://img.shields.io/crates/v/asura.svg)](https://crates.io/crates/asura)
+[![documentation](https://docs.rs/asura/badge.svg)](https://docs.rs/asura)
+
 ASURA implementation in Rust.
 
 ## What is ASURA?
