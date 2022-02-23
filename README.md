@@ -5,6 +5,8 @@
 
 ASURA implementation in Rust.
 
+![](https://xn----kx8am9osvhcni7kau6dfv3e.jinja-tera-gosyuin-meguri.com/wp-content/uploads/2019/01/37e22bc93935f5633fde07e8280f775c.jpg)
+
 ## What is ASURA?
 
 **ASURA**, like best-known consistent-hashing, is an algorithm to compute the placement node from a key. ASURA is a abbreviation of Advanced Scalable
