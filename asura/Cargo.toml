@@ -13,4 +13,4 @@ keywords = ["distributed", "hash"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asura-rand = { path = "../asura-rand" }
+oorandom = "11.1"

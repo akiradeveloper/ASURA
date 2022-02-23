@@ -19,6 +19,8 @@
 
 use std::collections::HashMap;
 
+mod rand;
+
 pub type NodeId = u64;
 
 pub struct Segment {
@@ -114,7 +116,7 @@ impl<'a> Searcher<'a> {
         Self { seg_table }
     }
     pub fn search(&self, data_key: u64) -> NodeId {
-        let mut rng = asura_rand::Generator::new(data_key, self.seg_table.max_bound);
+        let mut rng = rand::Generator::new(data_key, self.seg_table.max_bound);
         loop {
             let x = rng.next_rand();
             if let Some(node_id) = self.seg_table.search_once(x as f64) {
