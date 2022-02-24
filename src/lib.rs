@@ -14,7 +14,7 @@
 //! cluster.remove_node(1);
 //!
 //! let data_key = 43287642786;
-//! let assign_node_id = cluster.search(data_key);
+//! let assign_node_id = cluster.calc_candidates(data_key, 1)[0];
 //! assert!(assign_node_id < 3);
 //! assert_ne!(assign_node_id, 1);
 //! ```
@@ -166,12 +166,14 @@ pub struct Cluster {
     seg_table: SegmentTable,
 }
 impl Cluster {
+    /// Create an empty cluster.
     pub fn new() -> Self {
         Self {
             seg_table: SegmentTable::new(),
         }
     }
     /// Add a node with capacity.
+    /// Using xTB as the `cap` parameter is recommended.
     /// Cost: O(n) where n is the size of this segment table.
     pub fn add_nodes<I: IntoIterator<Item = Node>>(&mut self, nodes: I) {
         self.seg_table.add_nodes(nodes)
@@ -181,8 +183,17 @@ impl Cluster {
     pub fn remove_node(&mut self, node_id: NodeId) {
         self.seg_table.remove_node(node_id)
     }
-    pub fn search(&self, data_key: u64) -> NodeId {
+    /// Compute n first distinct nodes from a data key.
+    /// Typical use case of n > 1 is when you want to replicate the data.
+    pub fn calc_candidates(&self, data_key: u64, n: usize) -> Vec<NodeId> {
+        let max_n = self.seg_table.rev.len();
+        let limit = std::cmp::min(n, max_n);
+        let mut set = indexmap::IndexSet::new();
         let searcher = Searcher::new(&self.seg_table);
-        searcher.search(data_key)
+        while set.len() < limit {
+            let node_id = searcher.search(data_key);
+            set.insert(node_id);
+        }
+        set.into_iter().collect()
     }
 }

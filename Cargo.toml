@@ -14,3 +14,4 @@ keywords = ["distributed", "hash"]
 
 [dependencies]
 oorandom = "11.1"
+indexmap = "1.8"
