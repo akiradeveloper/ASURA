@@ -3,7 +3,7 @@
 [![Crates.io](https://img.shields.io/crates/v/asura.svg)](https://crates.io/crates/asura)
 [![documentation](https://docs.rs/asura/badge.svg)](https://docs.rs/asura)
 
-ASURA implementation in Rust.
+ASURA implementation in Rust. A better alternative of Consistent-hashing.
 
 ![](https://xn----kx8am9osvhcni7kau6dfv3e.jinja-tera-gosyuin-meguri.com/wp-content/uploads/2019/01/37e22bc93935f5633fde07e8280f775c.jpg)
 
@@ -19,6 +19,7 @@ The basic: ASURA is a class of Monte Carlo method because it uses random number 
 The core of the ASURA is ASURA random number generator. Because of the property, we can add or remove a node without changing most of the previous placements just like consistent-hashing.
 
 For more detail, you can read the paper here: [https://arxiv.org/ftp/arxiv/papers/1309/1309.7720.pdf](https://arxiv.org/ftp/arxiv/papers/1309/1309.7720.pdf).
+
 ## Author
 
 Akira Hayakawa (ruby.wktk@gmail.com)
