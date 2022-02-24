@@ -105,6 +105,19 @@ impl SegmentTable {
         }
     }
 }
+#[test]
+fn test_add_huge_node() {
+    let mut seg = SegmentTable::new();
+    // 10EB
+    seg.add_node(0, 10000000.);
+}
+#[test]
+fn test_add_many_nodes() {
+    let mut seg = SegmentTable::new();
+    for id in 0..1000 { // 1PB
+        seg.add_node(id, 1.);
+    }
+}
 
 pub struct Searcher<'a> {
     seg_table: &'a SegmentTable,
