@@ -37,6 +37,7 @@ struct Segment {
 
 struct SegmentTable {
     h: HashMap<u64, Segment>,
+    rev: HashMap<NodeId, Vec<u64>>,
     max_bound: f64,
 }
 impl SegmentTable {
@@ -44,6 +45,7 @@ impl SegmentTable {
     fn new() -> Self {
         Self {
             h: HashMap::new(),
+            rev: HashMap::new(),
             max_bound: 0.,
         }
     }
@@ -61,6 +63,8 @@ impl SegmentTable {
         self.max_bound = maxv;
     }
     fn add_node(&mut self, node: Node, next: u64) -> u64 {
+        assert!(!self.rev.contains_key(&node.node_id));
+
         let mut remaining = node.cap;
         let mut l = next;
         loop {
@@ -76,6 +80,7 @@ impl SegmentTable {
                     len,
                 };
                 self.h.insert(l, seg);
+                self.rev.entry(node.node_id).or_insert(vec![]).push(l);
             }
             l += 1;
         }
@@ -89,15 +94,11 @@ impl SegmentTable {
         self.recalc_max_bound()
     }
     fn remove_node(&mut self, node_id: NodeId) {
-        let mut removes = vec![];
-        for (l, seg) in &self.h {
-            if seg.node_id == node_id {
-                removes.push(*l);
-            }
-        }
+        let removes = self.rev.get(&node_id).unwrap();
         for l in removes {
-            self.h.remove(&l);
+            self.h.remove(l);
         }
+        self.rev.remove(&node_id);
         self.recalc_max_bound()
     }
     fn search_once(&self, x: f64) -> Option<NodeId> {
@@ -176,7 +177,7 @@ impl Cluster {
         self.seg_table.add_nodes(nodes)
     }
     /// Remove a node.
-    /// Cost: O(n) where n is the size of this segment table.
+    /// Cost: O(cap) where cap is the capacity of the node.
     pub fn remove_node(&mut self, node_id: NodeId) {
         self.seg_table.remove_node(node_id)
     }
