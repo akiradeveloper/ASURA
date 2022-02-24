@@ -5,15 +5,16 @@
 //! ```
 //! use asura::*;
 //!
-//! let mut seg = SegmentTable::new();
-//! seg.add_node(0, 10.);
-//! seg.add_node(1, 5.);
-//! seg.add_node(2, 8.);
-//! seg.remove_node(1);
+//! let mut cluster = Cluster::new();
+//! cluster.add_nodes([
+//!     Node { node_id: 0, cap: 10. },
+//!     Node { node_id: 1, cap: 5. },
+//!     Node { node_id: 2, cap: 8. },
+//! ]);
+//! cluster.remove_node(1);
 //!
-//! let searcher = Searcher::new(&seg);
 //! let data_key = 43287642786;
-//! let assign_node_id = searcher.search(data_key);
+//! let assign_node_id = cluster.search(data_key);
 //! assert!(assign_node_id < 3);
 //! assert_ne!(assign_node_id, 1);
 //! ```
@@ -24,18 +25,23 @@ mod rand;
 
 pub type NodeId = u64;
 
+pub struct Node {
+    pub node_id: NodeId,
+    pub cap: f64,
+}
+
 struct Segment {
     node_id: NodeId,
     len: f64,
 }
 
-pub struct SegmentTable {
+struct SegmentTable {
     h: HashMap<u64, Segment>,
     max_bound: f64,
 }
 impl SegmentTable {
     /// Create an empty segment table.
-    pub fn new() -> Self {
+    fn new() -> Self {
         Self {
             h: HashMap::new(),
             max_bound: 0.,
@@ -54,11 +60,10 @@ impl SegmentTable {
         }
         self.max_bound = maxv;
     }
-    /// Add a node with capacity.
-    /// Cost: O(n) where n is the size of this segment table.
-    pub fn add_node(&mut self, node_id: NodeId, cap: f64) {
-        let mut remaining = cap;
-        for l in 0.. {
+    fn add_node(&mut self, node: Node, next: u64) -> u64 {
+        let mut remaining = node.cap;
+        let mut l = next;
+        loop {
             if remaining == 0. {
                 break;
             }
@@ -66,15 +71,24 @@ impl SegmentTable {
             if vacant {
                 let len = if remaining > 1. { 1. } else { remaining };
                 remaining -= len;
-                let seg = Segment { node_id, len };
+                let seg = Segment {
+                    node_id: node.node_id,
+                    len,
+                };
                 self.h.insert(l, seg);
             }
+            l += 1;
+        }
+        l
+    }
+    fn add_nodes(&mut self, nodes: impl std::iter::IntoIterator<Item = Node>) {
+        let mut next = 0;
+        for node in nodes {
+            next = self.add_node(node, next);
         }
         self.recalc_max_bound()
     }
-    /// Remove a node.
-    /// Cost: O(n) where n is the size of this segment table.
-    pub fn remove_node(&mut self, node_id: NodeId) {
+    fn remove_node(&mut self, node_id: NodeId) {
         let mut removes = vec![];
         for (l, seg) in &self.h {
             if seg.node_id == node_id {
@@ -108,26 +122,35 @@ impl SegmentTable {
 #[test]
 fn test_add_huge_node() {
     let mut seg = SegmentTable::new();
-    // 10EB
-    seg.add_node(0, 10000000.);
+    // 1EB
+    seg.add_nodes([Node {
+        node_id: 0,
+        cap: 1000000.,
+    }]);
 }
 #[test]
 fn test_add_many_nodes() {
     let mut seg = SegmentTable::new();
-    for id in 0..1000 { // 1PB
-        seg.add_node(id, 1.);
+    let mut nodes = vec![];
+    // 1EB
+    for id in 0..1000000 {
+        nodes.push(Node {
+            node_id: id,
+            cap: 1.,
+        });
     }
+    seg.add_nodes(nodes);
 }
 
-pub struct Searcher<'a> {
+struct Searcher<'a> {
     seg_table: &'a SegmentTable,
 }
 impl<'a> Searcher<'a> {
-    pub fn new(seg_table: &'a SegmentTable) -> Self {
+    fn new(seg_table: &'a SegmentTable) -> Self {
         assert!(!seg_table.is_empty());
         Self { seg_table }
     }
-    pub fn search(&self, data_key: u64) -> NodeId {
+    fn search(&self, data_key: u64) -> NodeId {
         let mut rng = rand::Generator::new(data_key, self.seg_table.max_bound);
         loop {
             let x = rng.next_rand();
@@ -135,5 +158,30 @@ impl<'a> Searcher<'a> {
                 return node_id;
             }
         }
+    }
+}
+
+pub struct Cluster {
+    seg_table: SegmentTable,
+}
+impl Cluster {
+    pub fn new() -> Self {
+        Self {
+            seg_table: SegmentTable::new(),
+        }
+    }
+    /// Add a node with capacity.
+    /// Cost: O(n) where n is the size of this segment table.
+    pub fn add_nodes<I: IntoIterator<Item = Node>>(&mut self, nodes: I) {
+        self.seg_table.add_nodes(nodes)
+    }
+    /// Remove a node.
+    /// Cost: O(n) where n is the size of this segment table.
+    pub fn remove_node(&mut self, node_id: NodeId) {
+        self.seg_table.remove_node(node_id)
+    }
+    pub fn search(&self, data_key: u64) -> NodeId {
+        let searcher = Searcher::new(&self.seg_table);
+        searcher.search(data_key)
     }
 }
