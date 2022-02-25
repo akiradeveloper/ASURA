@@ -1,9 +1,9 @@
-# ASURA
+# ASURA (阿修羅)
 
 [![Crates.io](https://img.shields.io/crates/v/asura.svg)](https://crates.io/crates/asura)
 [![documentation](https://docs.rs/asura/badge.svg)](https://docs.rs/asura)
 
-ASURA implementation in Rust. A better alternative of Consistent-hashing.
+ASURA implementation in Rust. A better alternative of consistent-hashing.
 
 ![](https://xn----kx8am9osvhcni7kau6dfv3e.jinja-tera-gosyuin-meguri.com/wp-content/uploads/2019/01/37e22bc93935f5633fde07e8280f775c.jpg)
 
