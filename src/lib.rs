@@ -119,6 +119,47 @@ impl SegmentTable {
             }
         }
     }
+    fn from_table(tbl: Table) -> Self {
+        let mut max_bound = 0.;
+        let mut h = HashMap::new();
+        let mut rev = HashMap::new();
+        for row in tbl.rows {
+            let r = row.l as f64 + row.len;
+            if r > max_bound {
+                max_bound = r;
+            }
+
+            let mut cur_l = row.l;
+            let mut remaining = row.len;
+            while remaining > 0. {
+                let cut = if remaining >= 1. { 1. } else { remaining };
+                h.insert(
+                    cur_l,
+                    Segment {
+                        node_id: row.node_id,
+                        len: cut,
+                    },
+                );
+                rev.entry(row.node_id).or_insert(vec![]).push(cur_l);
+
+                cur_l += 1;
+                remaining -= cut;
+            }
+        }
+        Self { h, rev, max_bound }
+    }
+    fn dump_table(&self) -> Table {
+        let mut rows = vec![];
+        for (&l, seg) in &self.h {
+            let row = Row {
+                node_id: seg.node_id,
+                l,
+                len: seg.len,
+            };
+            rows.push(row);
+        }
+        Table { rows }
+    }
 }
 #[test]
 fn test_add_huge_node() {
@@ -195,5 +236,58 @@ impl Cluster {
             set.insert(node_id);
         }
         set.into_iter().collect()
+    }
+    /// Reconstruct `Cluster` from `Table`.
+    pub fn from_table(tbl: Table) -> Self {
+        Self {
+            seg_table: SegmentTable::from_table(tbl),
+        }
+    }
+    /// Dump `Table`.
+    pub fn dump_table(&self) -> Table {
+        self.seg_table.dump_table()
+    }
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+struct Row {
+    node_id: u64,
+    l: u64,
+    len: f64,
+}
+
+/// Lightweight dump structure that includes enough information to reconstruct the cluster.
+/// This is useful when you want to save the cluster in bytes to pass it over network
+/// or to save it in file.
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+pub struct Table {
+    rows: Vec<Row>,
+}
+
+#[test]
+fn test_dump_table() {
+    let mut c1 = Cluster::new();
+    c1.add_nodes([
+        Node {
+            node_id: 0,
+            cap: 10.,
+        },
+        Node {
+            node_id: 1,
+            cap: 5.,
+        },
+        Node {
+            node_id: 2,
+            cap: 8.,
+        },
+    ]);
+
+    let tbl = c1.dump_table();
+    let c2 = Cluster::from_table(tbl);
+
+    for i in 0..100000 {
+        let x = c1.calc_candidates(i, 1);
+        let y = c2.calc_candidates(i, 1);
+        assert_eq!(x, y);
     }
 }
