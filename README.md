@@ -1,4 +1,4 @@
-# ASURA (阿修羅)
+# ASURA 阿修羅
 
 [![Crates.io](https://img.shields.io/crates/v/asura.svg)](https://crates.io/crates/asura)
 [![documentation](https://docs.rs/asura/badge.svg)](https://docs.rs/asura)
