@@ -14,7 +14,7 @@
 //! cluster.remove_node(1);
 //!
 //! let data_key = 43287642786;
-//! let assign_node_id = cluster.calc_candidates(data_key, 1)[0];
+//! let assign_node_id = cluster.calc_candidates(data_key, 1).unwrap()[0];
 //! assert!(assign_node_id < 3);
 //! assert_ne!(assign_node_id, 1);
 //! ```
@@ -226,16 +226,22 @@ impl Cluster {
     }
     /// Compute n first distinct nodes from a data key.
     /// Typical use case of n > 1 is when you want to replicate the data.
-    pub fn calc_candidates(&self, data_key: u64, n: usize) -> Vec<NodeId> {
-        let max_n = self.seg_table.rev.len();
-        let limit = std::cmp::min(n, max_n);
-        let mut set = indexmap::IndexSet::new();
-        let searcher = Searcher::new(&self.seg_table);
-        while set.len() < limit {
-            let node_id = searcher.search(data_key);
-            set.insert(node_id);
+    pub fn calc_candidates(&self, data_key: u64, n: usize) -> Option<Vec<NodeId>> {
+        if self.seg_table.is_empty() {
+            return None;
         }
-        set.into_iter().collect()
+        let candidates = {
+            let max_n = self.seg_table.rev.len();
+            let limit = std::cmp::min(n, max_n);
+            let mut set = indexmap::IndexSet::new();
+            let searcher = Searcher::new(&self.seg_table);
+            while set.len() < limit {
+                let node_id = searcher.search(data_key);
+                set.insert(node_id);
+            }
+            set.into_iter().collect()
+        };
+        Some(candidates)
     }
     /// Reconstruct `Cluster` from `Table`.
     pub fn from_table(tbl: Table) -> Self {
@@ -247,6 +253,12 @@ impl Cluster {
     pub fn dump_table(&self) -> Table {
         self.seg_table.dump_table()
     }
+}
+
+#[test]
+fn test_return_empty() {
+    let cluster = Cluster::new();
+    assert_eq!(cluster.calc_candidates(100, 1), None);
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
