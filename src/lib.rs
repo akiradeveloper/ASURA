@@ -192,14 +192,23 @@ impl<'a> Searcher<'a> {
         assert!(!seg_table.is_empty());
         Self { seg_table }
     }
-    fn search(&self, data_key: u64) -> NodeId {
+    fn search(&self, data_key: u64, n: usize) -> Vec<NodeId> {
+        let max_n = self.seg_table.rev.len();
+        let limit = std::cmp::min(n, max_n);
+
         let mut rng = rand::Generator::new(data_key, self.seg_table.max_bound);
-        loop {
-            let x = rng.next_rand();
-            if let Some(node_id) = self.seg_table.search_once(x as f64) {
-                return node_id;
-            }
+        let mut set = indexmap::IndexSet::new();
+        while set.len() < limit {
+            // find one
+            let node_id = loop {
+                let x = rng.next_rand();
+                if let Some(found) = self.seg_table.search_once(x as f64) {
+                    break found;
+                }
+            };
+            set.insert(node_id);
         }
+        set.into_iter().collect()
     }
 }
 
@@ -231,15 +240,8 @@ impl Cluster {
             return None;
         }
         let candidates = {
-            let max_n = self.seg_table.rev.len();
-            let limit = std::cmp::min(n, max_n);
-            let mut set = indexmap::IndexSet::new();
             let searcher = Searcher::new(&self.seg_table);
-            while set.len() < limit {
-                let node_id = searcher.search(data_key);
-                set.insert(node_id);
-            }
-            set.into_iter().collect()
+            searcher.search(data_key, n)
         };
         Some(candidates)
     }
@@ -259,6 +261,32 @@ impl Cluster {
 fn test_return_empty() {
     let cluster = Cluster::new();
     assert_eq!(cluster.calc_candidates(100, 1), None);
+}
+
+#[test]
+fn test_search_multiple_candidates() {
+    let mut cluster = Cluster::new();
+    cluster.add_nodes([
+        Node {
+            node_id: 0,
+            cap: 1.,
+        },
+        Node {
+            node_id: 1,
+            cap: 1.,
+        },
+        Node {
+            node_id: 2,
+            cap: 1.,
+        },
+    ]);
+    let data_key = 111;
+    let l2 = cluster.calc_candidates(data_key, 2).unwrap();
+    assert_eq!(l2, vec![2, 1]);
+    let l3 = cluster.calc_candidates(data_key, 3).unwrap();
+    assert_eq!(l3, vec![2, 1, 0]);
+    let l4 = cluster.calc_candidates(data_key, 4).unwrap();
+    assert_eq!(l4, vec![2, 1, 0]);
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
