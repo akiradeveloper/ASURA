@@ -16,3 +16,6 @@ keywords = ["distributed", "hash"]
 oorandom = "11.1"
 indexmap = "1.8"
 serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+rand = "0.8"
