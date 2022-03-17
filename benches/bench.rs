@@ -1,6 +1,6 @@
 #![feature(test)]
 
-use asura::*;
+use asura::{Cluster, Node};
 
 extern crate test;
 

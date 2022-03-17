@@ -21,7 +21,7 @@
 
 use std::collections::HashMap;
 
-mod rand;
+pub mod rand;
 
 pub type NodeId = u64;
 

@@ -5,20 +5,22 @@ extern crate test;
 use consistent_hash::*;
 
 fn do_bench(n_node: u64, b: &mut test::Bencher) {
-	let mut nodes = vec![];
-	for i in 0..n_node {
-		let node_id = format!("node-{i}");
-		let node = Node::new(node_id).quantity(10);
-		nodes.push(node);
-	}
-	let ring = StaticHashRing::new(DefaultHash, nodes.into_iter());
+    let mut nodes = vec![];
+    for i in 0..n_node {
+        let node_id = format!("node-{i}");
+        let node = Node::new(node_id).quantity(10);
+        nodes.push(node);
+    }
+    let ring = StaticHashRing::new(DefaultHash, nodes.into_iter());
     b.iter(|| {
+        let key = rand::random::<u64>();
+        let key = format!("{}", key);
+        let mut cand_iter = ring.calc_candidates(&key);
         let mut cand_list = vec![];
-		let mut cand_iter = ring.calc_candidates(&"a");
-		for _ in 0..8 {
-			let cand = cand_iter.next().unwrap();
-			cand_list.push(cand);
-		}
+        for _ in 0..8 {
+            let cand = cand_iter.next().unwrap();
+            cand_list.push(cand);
+        }
     });
 }
 
