@@ -19,3 +19,4 @@ serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
 rand = "0.8"
+consistent_hash = "0.1.4"
